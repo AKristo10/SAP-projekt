@@ -21,7 +21,8 @@ library(dplyr)
 
 Učitajmo podatke iz .csv file-a
 ```{r}
-bigFiveData = read.csv("../big_five_scores.csv")
+bigFiveData = read.csv("C:/users/josa2/desktop/college/statistička analiza podataka/SAP projekt/big_five_scores.csv"
+, header = TRUE, sep = ",")
 dim(bigFiveData)
 ```
 Podaci se sastoje od 307 313 testiranih ljudi i 9 varijabli koje promatramo.
@@ -111,3 +112,112 @@ Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da d
 # prvo cemo uzeti da su mladi <=30 , stari >30
 
 ```
+
+
+#ANOVA test
+
+Učitavamo potrebne pakete za test
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(tidyverse)
+library(broom)
+library(AICcmodavg)
+library(tidyverse)
+```
+
+Učitavamo podatke potrebne za na testiranje hipoteze. 
+
+```{r}
+filtered <- bigFiveData %>%
+  select(country, conscientiousness_score)
+summary(filtered)
+
+#Provjera je li koja zemlja NA
+filtered <- filtered[which(!is.na(filtered$'country')),]
+summary(filtered)
+
+#Grupiramo po zemljama podatke
+grupirani.podatci <-
+  filtered %>%
+  group_by(country)
+summary(grupirani.podatci)
+```
+#Računanje reziduala
+Računamo ANOVU kako bi imali reziduale, te ćemo pomoću njih provjeriti jednakost varijanci i provjeriti normalnost prije provođenja ANOVA
+
+```{r}
+res_aov <- aov(conscientiousness_score ~ country,
+  data = grupirani.podatci
+)
+
+par(mfrow = c(1, 2)) # combine plots
+
+# histogram
+hist(res_aov$residuals)
+
+# QQ-plot
+library(car)
+qqPlot(res_aov$residuals,
+  id = FALSE # id = FALSE to remove point identification
+)
+```
+#Box plot reziduala
+
+```{r}
+par(cex.country=0.1)
+boxplot(conscientiousness_score ~ country,
+  data = grupirani.podatci
+)
+```
+Po grafu možemo vidjeti da su varijance uzoraka jednako distribuirane, no provest ćemo test gdje je nulta hipoteza da su varijance jednake.
+#Leaven test normalnosti reziduala
+
+```{r}
+library(car)
+
+leveneTest(conscientiousness_score ~ country,
+  data = filtered
+)
+```
+Nakon provedenog Levene's testa vidimo da je p vrijednost jako mala i da su varijance uzorka različite, odnosno barem jedan uzorak ima drugačiju varijancu.
+
+#Provjeravamo normalnost
+
+```{r}
+plot(res_aov, which = 2)
+```
+#ANOVA test
+
+```{r}
+aggregate(conscientiousness_score ~ country,
+  data = filtered,
+  function(x) round(c(mean = mean(x), sd = sd(x)), 2)
+)
+
+group_by(filtered, country) %>%
+  summarise(
+    mean = mean(conscientiousness_score, na.rm = TRUE),
+    sd = sd(conscientiousness_score, na.rm = TRUE)
+  )
+```
+Iz gornjih podataka možemo naslutiti da srednja vrijednost savjesnosti pojedinih država odskače od ostalih, te ćemo pomoću jednostranog ANOVA testa potvrditi da pojedine zemlje
+odskaču i kasnije post - hoc testom utvrditi koja zemlja najviše odskače.
+
+#Jednostrani ANOVA test
+
+```{r}
+# 1st method:
+oneway.test(conscientiousness_score ~ country,
+  data = filtered,
+  var.equal = TRUE # assuming equal variances
+)
+
+oneway.test(conscientiousness_score ~ country,
+  data = filtered,
+  var.equal = FALSE # assuming unequal variances
+)
+```
+
