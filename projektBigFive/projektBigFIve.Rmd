@@ -1,0 +1,113 @@
+---
+title: "projektBigFive"
+author: "Homo SAPiens"
+date: "12/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#ucitavanje paketa
+Učitajmo potrebne pakete
+
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+
+```
+
+#Učitavanje podataka
+
+Učitajmo podatke iz .csv file-a
+```{r}
+bigFiveData = read.csv("../big_five_scores.csv")
+dim(bigFiveData)
+```
+Podaci se sastoje od 307 313 testiranih ljudi i 9 varijabli koje promatramo.
+
+Popis varijabli koje promatramo:
+```{r}
+names(bigFiveData)
+```
+Za testirane sudionike u tablici su navedeni njihovi podaci (godina, zemlja, spol) te 5 faktora koje promtramo(ekstraverzija, ugodnost, savjesnost, neuroticizam i otvorenost)
+
+Možemo promotriti ponašanje varijabli.
+
+```{r}
+summary(bigFiveData)
+```
+
+```{r}
+sapply(bigFiveData, class)
+```
+
+Vidimo iz prioloženog tip podataka danih varijabli. Zemlja je zadana stringom, dok su ostale varijable brojčane(int ili numeric). Svi faktori koje promatramo su numeric tipa i imaju vrijednost od 0 do 1.
+
+Sada gledamo postoje li u našem skupu podataka nedostajuće vrijednosti jer one mogu poremetiti rezultate testa. Promatramo sve varijable i brojimo koliko je NA vrijednosti ako ih ima.
+
+```{r}
+for (col_name in names(bigFiveData)){
+  if (sum(is.na(bigFiveData[,col_name])) > 0){
+    cat('Ukupno nedostajućih vrijednosti za varijablu ',col_name, ': ', sum(is.na(bigFiveData[,col_name])),'\n')
+  }
+}
+```
+
+Po rezultatima vidimo da nemamo NA vrijednosti(neodostajućih) ni u jednoj varijabli. Podaci su uredni.
+
+Promotrimo sada kako izgledaju varijable koje dobijemo kao informaciju od ispitanika (godine, zemlja, spol)
+
+Prov ćemo gledati godine jer je to numerička:
+```{r}
+hist(bigFiveData$age,main='Age', xlab='Age', ylab='Frequency')
+
+```
+Vidimo da rezultat nije normalne dristirbucije, pa ćemo pokušati log transformacijom približiti normalnoj.
+
+```{r fig.width = 14, fig.height=5}
+hist(log(bigFiveData$age),main='Age',xlab='Age',ylab='Frequency', breaks=50)
+
+
+```
+Vidimo da smo se uspjeli približiti normalnoj razdiobi.
+
+Sad ćemo pogledati kategorijske varijable (spol i država)
+
+```{r}
+#broj Muskih i Zenskih ispitanika
+print("Podjela na M i Z: ")
+table(bigFiveData$sex)
+barplot(table(bigFiveData$sex), las=2, main='Sex')
+table(bigFiveData$country)
+barplot(table(bigFiveData$country),cex.names = .25, main="Nationality")
+```
+
+Sada kad smo pregledali podatke koje imamo, možemo krenuti na testiranje hipoteza.
+
+#prvi test
+
+1. TEST
+Ako grupiramo ispitanike na mlade i stare, mozemo li vidjeti znacajnu razliku u otvorenosti prema novim iskustvima?
+
+pretpostavka:
+
+H0: Mladi su otvoreniji prema iskustvima, nego stari.
+
+H1: Mladi nisu otvoreniji prema iskustvima.
+
+Ovdje ćemo koristiti jendostrani t-test za testiranje.
+
+T-test za prepostavku uzima normalnost podataka, pa prije početka testiranja moramo pokazati normalnost.
+
+Za početak ćemo nacrtati histogram i odokativno vidjeti.
+
+Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da distribucija ne izgleda najbliže normalnoj, pa ćemo za mlade uzeti mlađe od 25, a za stare starije od 30 i vidjeti kako se graf ponaša.
+
+
+
+```{r}
+#histogram za mlade/stare!
+# prvo cemo uzeti da su mladi <=30 , stari >30
+
+```
