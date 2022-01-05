@@ -21,7 +21,7 @@ library(dplyr)
 
 Učitajmo podatke iz .csv file-a
 ```{r}
-bigFiveData = read.csv("../big_five_scores.csv")
+bigFiveData = read.csv("./big_five_scores.csv")
 dim(bigFiveData)
 ```
 Podaci se sastoje od 307 313 testiranih ljudi i 9 varijabli koje promatramo.
@@ -30,9 +30,14 @@ Popis varijabli koje promatramo:
 ```{r}
 names(bigFiveData)
 ```
-Za testirane sudionike u tablici su navedeni njihovi podaci (godina, zemlja, spol) te 5 faktora koje promtramo(ekstraverzija, ugodnost, savjesnost, neuroticizam i otvorenost)
+Za testirane sudionike u tablici su navedeni njihovi podaci (godina, zemlja, spol) te 5 faktora koje promtramo (ugodnost, ektraverzija, otvorenost, savjesnost i neuroticizam)
 
-Možemo promotriti ponašanje varijabli.
+
+```{r}
+View(bigFiveData)
+```
+
+Svi podatci su jednako korisni i nema potrebe za izbacivanjem podataka iz dataseta. Možemo promotriti ponašanje varijabli.
 
 ```{r}
 summary(bigFiveData)
@@ -54,16 +59,16 @@ for (col_name in names(bigFiveData)){
 }
 ```
 
-Po rezultatima vidimo da nemamo NA vrijednosti(neodostajućih) ni u jednoj varijabli. Podaci su uredni.
+Po rezultatima vidimo da nemamo NA (neodostajućih) vrijednosti ni u jednoj varijabli. Podaci su uredni.
 
 Promotrimo sada kako izgledaju varijable koje dobijemo kao informaciju od ispitanika (godine, zemlja, spol)
 
-Prov ćemo gledati godine jer je to numerička:
+Prvo ćemo gledati godine jer je to numerička varijabla:
 ```{r}
 hist(bigFiveData$age,main='Age', xlab='Age', ylab='Frequency')
 
 ```
-Vidimo da rezultat nije normalne dristirbucije, pa ćemo pokušati log transformacijom približiti normalnoj.
+Vidimo da rezultat nije normalne distrbucije, pa ćemo pokušati log transformacijom približiti normalnoj.
 
 ```{r fig.width = 14, fig.height=5}
 hist(log(bigFiveData$age),main='Age',xlab='Age',ylab='Frequency', breaks=50)
@@ -75,7 +80,7 @@ Vidimo da smo se uspjeli približiti normalnoj razdiobi.
 Sad ćemo pogledati kategorijske varijable (spol i država)
 
 ```{r}
-#broj Muskih i Zenskih ispitanika
+#broj muskih i zenskih ispitanika
 print("Podjela na M i Z: ")
 table(bigFiveData$sex)
 barplot(table(bigFiveData$sex), las=2, main='Sex')
@@ -88,26 +93,133 @@ Sada kad smo pregledali podatke koje imamo, možemo krenuti na testiranje hipote
 #prvi test
 
 1. TEST
-Ako grupiramo ispitanike na mlade i stare, mozemo li vidjeti znacajnu razliku u otvorenosti prema novim iskustvima?
+Ako grupiramo ispitanike na mlade i stare, možemo li vidjeti značajnu razliku u otvorenosti prema novim iskustvima?
 
 pretpostavka:
 
-H0: Mladi su otvoreniji prema iskustvima, nego stari.
+H0: Mladi su jednako otvoreni prema novim iskustvima kao i stari.
 
-H1: Mladi nisu otvoreniji prema iskustvima.
+H1: Mladi su otvoreniji prema novim iskustvima nego stari.
 
-Ovdje ćemo koristiti jendostrani t-test za testiranje.
+Ovdje ćemo koristiti jednostrani t-test za testiranje.
 
 T-test za prepostavku uzima normalnost podataka, pa prije početka testiranja moramo pokazati normalnost.
 
-Za početak ćemo nacrtati histogram i odokativno vidjeti.
+Za početak ćemo nacrtati histogram i otprilike vidjeti.
 
-Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da distribucija ne izgleda najbliže normalnoj, pa ćemo za mlade uzeti mlađe od 25, a za stare starije od 30 i vidjeti kako se graf ponaša.
-
+Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da distribucija ne izgleda najbliže normalnoj, pa ćemo za mlade uzeti mlađe od 35, a za stare starije od 35 i vidjeti kako se graf ponaša.
 
 
 ```{r}
-#histogram za mlade/stare!
-# prvo cemo uzeti da su mladi <=30 , stari >30
 
+young_people = bigFiveData[which(bigFiveData$age <= 35),]
+old_people = bigFiveData[which(bigFiveData$age > 35),]
+```
+```{r}
+
+cat('Prosječna ocjena otvorenosti mladih ljudi iznosi ', mean(young_people$openness_score), '\n')
+cat('Prosječna ocjena otvorenosti starih ljudi iznosi ', mean(old_people$openness_score), '\n')
+
+```
+```{r}
+boxplot(young_people$openness_score, old_people$openness_score,
+        names = c('Young people openness score', 'Old people openness score'),
+        main = 'Boxplot of young and old people openness score')
+```
+Sada provjeravamo normalnost podataka. Najprije crtamo histograme za obje populacije.
+
+```{r}
+hist(young_people$openness_score, main='Young people openness score', xlab='Openness score', ylab='Frequency')
+```
+```{r}
+hist(old_people$openness_score, main='Old people openness score', xlab='Openness score', ylab='Frequency')
+```
+Iz histograma možemo pretpostaviti da su razdiobe normalne, no radimo i Lilliefors test.
+
+```{r}
+nortest::lillie.test(young_people$openness_score)
+nortest::lillie.test(old_people$openness_score)
+```
+```{r}
+qqnorm(young_people$openness_score, main = 'Young people openness score')
+qqline(young_people$openness_score, col = 'mediumblue')
+```
+
+```{r}
+qqnorm(old_people$openness_score, main = 'Old people openness score')
+qqline(old_people$openness_score, col = 'mediumblue')
+```
+
+Zaključujemo da se radi o normalnim razdiobama.
+
+Zatim provjeravamo jednakost varijanci dvaju uzoraka kako bismo mogli odabrati prikladni test. Radimo test o jednakosti varijanci.
+
+```{r}
+var.test(young_people$openness_score, old_people$openness_score)
+
+```
+Dobili smo da je p-vrijednost jako mala, što znači da možemo odbaciti hipotezu H0 da su varijance jednake.
+
+Provedimo sada t-test na podatcima.
+
+```{r}
+
+t.test(young_people$openness_score, old_people$openness_score, alt = "greater", var.equal = FALSE)
+
+```
+
+Iz testa vidimo da je p-vrijednost manja od 0.05 pa možemo odbaciti hipotezu H0 da su mlađi i stariji ljudi jednako otvoreni prema novim iskustvima u korist hipoteze H1 koja kaže da su mlađi ljudi otvoreniji prema novim iskustvima.
+
+# 4.test
+4. TEST
+
+U SAD-u su ljudi ekstravertiraniji nego u ostatku svijeta.
+
+H0: Ljudi u SAD-u imaju jednak koeficijent ekstraverzije kao i u ostatku svijeta.
+H1: Ljudi u SAD-u imaju veći koeficijent ekstraverzije nego ljudi u ostatku svijeta.
+
+```{r}
+
+Americans = bigFiveData[which(bigFiveData$country == 'USA'),]
+Others = bigFiveData[which(bigFiveData$country != 'USA'),]
+```
+```{r}
+
+cat('Prosječni koeficijent ekstraverzije kod Amerikanaca iznosi ', mean(Americans$extraversion_score), '\n')
+cat('Prosječni koeficijent ekstraverzije u ostatku svijeta ', mean(Others$extraversion_score), '\n')
+
+```
+```{r}
+boxplot(Americans$extraversion_score, Others$extraversion_score,
+        names = c('Americans extraversion score', 'Other people extraversion score'),
+        main = 'Boxplot of extraversion score in USA and other countries')
+```
+Sada provjeravamo normalnost podataka, stoga najprije crtamo histogram.
+
+```{r}
+hist(Americans$extraversion_score, main='Americans extraversion score', xlab='Extraversion score', ylab='Frequency')
+```
+```{r}
+hist(Others$extraversion_score, main='Others extraversion score', xlab='Extraversion score', ylab='Frequency')
+```
+```{r}
+nortest::lillie.test(Americans$extraversion_score)
+nortest::lillie.test(Others$extraversion_score)
+```
+```{r}
+qqnorm(Americans$extraversion_score, main = 'Americans extraversion score')
+qqline(Others$extraversion_score, col = 'mediumblue')
+```
+```{r}
+qqnorm(Others$extraversion_score, main = 'Others extraversion score')
+qqline(Others$extraversion_score, col = 'mediumblue')
+
+```
+
+Iz dosadašnjih rezultata zaključujemo da se radi o normalnim razdiobama.
+
+Zatim provjeravamo jednakost varijanci dvaju uzoraka kako bismo mogli odabrati prikladni test. Radimo test o jednakosti varijanci.
+
+```{r}
+var.test(Americans$extraversion_score, Others$extraversion_score)
 ```
