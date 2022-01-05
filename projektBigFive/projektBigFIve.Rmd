@@ -223,3 +223,14 @@ Zatim provjeravamo jednakost varijanci dvaju uzoraka kako bismo mogli odabrati p
 ```{r}
 var.test(Americans$extraversion_score, Others$extraversion_score)
 ```
+
+Zbog jako male p-vrijednosti možemo odbaciti hipotezu H0 da su varijance jednake.
+
+Naposlijetku provodimo t-test na podacima.
+
+```{r}
+
+t.test(Americans$extraversion_score, Others$extraversion_score, alt = "greater", var.equal = FALSE)
+
+```
+Vidimo da je p-vrijednost jako mala, zbog čega možemo odbaciti hipotezu H0 i zaključiti u korist H1 da su ljudi u SAD-u ekstravertiraniji od ostatka svijeta.
