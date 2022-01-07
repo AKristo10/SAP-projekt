@@ -23,6 +23,7 @@ Učitajmo podatke iz .csv file-a
 ```{r}
 bigFiveData = read.csv("../big_five_scores.csv")
 dim(bigFiveData)
+show(bigFiveData)
 ```
 Podaci se sastoje od 307 313 testiranih ljudi i 9 varijabli koje promatramo.
 
@@ -104,10 +105,121 @@ Za početak ćemo nacrtati histogram i odokativno vidjeti.
 
 Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da distribucija ne izgleda najbliže normalnoj, pa ćemo za mlade uzeti mlađe od 25, a za stare starije od 30 i vidjeti kako se graf ponaša.
 
+5.TEST
+U posljednjem testu uspoređujemo dva faktora, savjesnot i dob. Gledamo njihovu povezanost i želimo saznati ovisi li savjesnost osobe o njezinoj dobi. Naša je pretpostavka da savjesnost ovisi o dobi, tj. da su stariji ljudi više savjesni. 
 
+Također želimo vidjeti možemo li na temelju savjesnosti odrediti dob osobe.
+
+Dob je u našim podacima zadana brojevima od 0 do 60+ pa ćemo podijeliti na kategorije, na mlade i stare.
+
+Za mlađe ćemo uzeti osobe starosti 25 ili mlađe, a za starije ćemo uzeti osobe starije od 25. 
+#Dob nam je numerička varijabla, ali pretvorit ćemo ju u kategorijsku, gdje imamo dvije kategorije(mlađi i stariji)
+
+Za početak, prije glavnog dijela testiranja, napravit ćemo testove za sve faktore koje imamo te vidjeti kako se koji faktor ponaša u ovisnosti o dobi kada uzmemo za mlade mlađe od 25, a stare starije od 25.
+
+Prvo gledamo ovisnost dobi i ekstraverzije.
 
 ```{r}
-#histogram za mlade/stare!
-# prvo cemo uzeti da su mladi <=30 , stari >30
+young_people = bigFiveData[which(bigFiveData$age <= 25),]
+old_people = bigFiveData[which(bigFiveData$age > 25),]
+```
+```{r}
+
+cat('Prosječna ocjena ekstraverzije mladih ljudi iznosi ', mean(young_people$extraversion_score), '\n')
+cat('Prosječna ocjena ekstraverzije starih ljudi iznosi ', mean(old_people$extraversion_score), '\n')
+
 
 ```
+
+Prije svakog testiranja gdje pretpostavljamo normalnost, kao i do sada, moramo pokazati normalnost. Za početak ćemo prikazati podatke u histogramu.
+
+Histogram za ekstraverziju mlađih:
+```{r}
+hist(young_people$extraversion_score, main='Younger people extraversion score', xlab='Extraversion score', ylab='Frequency')
+```
+Histogram za ekstraverziju starijih:
+```{r}
+hist(old_people$extraversion_score, main='Older people extraversion score', xlab='Extraversion score', ylab='Frequency')
+
+```
+
+Na prethodnim histogramima možemo "na oko" vidjeti da se radi o normalnoj distibuciji, ali ćemo svakako provesti test za dokazeivanje normalnosti da budemo sigurniji.
+
+Sada radimo Lilliefors test:
+
+
+LINEARNA REGRESIJA
+Nakon provedenih 5 testova gdje smo uspoređivali dob sa svakim od 5 faktora odlučili smo se testirati početno, tj vidjeti možemo li na temelju dobi odrediti savjesnost.
+
+Kad promatramo utjecaj samo jedne nezavisne varijable X na neku zavisnu varijablu Y, grafički je moguće dobiti jako dobar dojam o njihovom odnosu - tu je najčešće od pomoći scatter plot. Zbog toga ćemo prikazati te podatke na scatter plotu.
+
+Scatter plot za dob vs otvorenost prema novim iskustvima:
+
+```{r}
+plot(bigFiveData$openness_score, bigFiveData$age)
+```
+
+Scatter plot za dob vs ekstrovertiranost:
+
+```{r}
+plot(bigFiveData$extraversion_score, bigFiveData$age)
+```
+Scatter plot za dob vs ugodnost:
+```{r}
+plot(bigFiveData$agreeable_score, bigFiveData$age)
+```
+
+Scatter plot za dob vs savjesnost:
+```{r}
+plot(bigFiveData$conscientiousness_score, bigFiveData$age)
+
+```
+
+Scatter plot za dob vs neurotizicizam:
+```{r}
+plot(bigFiveData$neuroticism_score, bigFiveData$age)
+
+```
+
+Sada ćemo napraviti linearni model za svih tih 5 primjera.
+
+Linearni modeli:
+
+```{r}
+fit.opennes = lm(age~openness_score,data=bigFiveData)
+fit.extraversion = lm(age~extraversion_score,data=bigFiveData)
+fit.agreeable = lm(age~agreeable_score,data=bigFiveData)
+fit.conscientiousness = lm(age~conscientiousness_score,data=bigFiveData)
+fit.neuroticism = lm(age~neuroticism_score,data=bigFiveData)
+```
+
+Sada crtamo liniju linearne regresije za sve ove modele:
+
+Dob vs otvorenost:
+```{r}
+plot(bigFiveData$openness_score, bigFiveData$age) #graficki prikaz podataka 
+lines(bigFiveData$openness_score,fit.opennes$fitted.values,col="red") #linija
+```
+Dob vs ekstroverzija:
+```{r}
+plot(bigFiveData$extraversion_score, bigFiveData$age) #graficki prikaz podataka 
+lines(bigFiveData$extraversion_score,fit.extraversion$fitted.values,col="red") #linija
+```
+
+Dob vs ugodnost:
+```{r}
+plot(bigFiveData$agreeable_score, bigFiveData$age) #graficki prikaz podataka 
+lines(bigFiveData$agreeable_score,fit.agreeable$fitted.values,col="red") #linija
+```
+
+Dob vs savjesnost:
+```{r}
+plot(bigFiveData$conscientiousness_score, bigFiveData$age) #graficki prikaz podataka 
+lines(bigFiveData$conscientiousness_score,fit.conscientiousness$fitted.values,col="red") #linija
+```
+Dob vs neuroticizam:
+```{r}
+plot(bigFiveData$neuroticism_score, bigFiveData$age) #graficki prikaz podataka 
+lines(bigFiveData$neuroticism_score,fit.neuroticism$fitted.values,col="red") #linija
+```
+
