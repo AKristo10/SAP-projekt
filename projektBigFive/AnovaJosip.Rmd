@@ -1,0 +1,244 @@
+---
+title: "projektBigFive"
+author: "Homo SAPiens"
+date: "12/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#ucitavanje paketa
+Učitajmo potrebne pakete
+
+```{r echo=T, error=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+
+```
+
+#Učitavanje podataka
+
+Učitajmo podatke iz .csv file-a
+```{r}
+bigFiveData = read.csv("C:/users/josa2/desktop/college/statistička analiza podataka/SAP projekt/big_five_scores.csv"
+, header = TRUE, sep = ",")
+dim(bigFiveData)
+```
+Podaci se sastoje od 307 313 testiranih ljudi i 9 varijabli koje promatramo.
+
+Popis varijabli koje promatramo:
+```{r}
+names(bigFiveData)
+```
+Za testirane sudionike u tablici su navedeni njihovi podaci (godina, zemlja, spol) te 5 faktora koje promtramo(ekstraverzija, ugodnost, savjesnost, neuroticizam i otvorenost)
+
+Možemo promotriti ponašanje varijabli.
+
+```{r}
+summary(bigFiveData)
+```
+
+```{r}
+sapply(bigFiveData, class)
+```
+
+Vidimo iz prioloženog tip podataka danih varijabli. Zemlja je zadana stringom, dok su ostale varijable brojčane(int ili numeric). Svi faktori koje promatramo su numeric tipa i imaju vrijednost od 0 do 1.
+
+Sada gledamo postoje li u našem skupu podataka nedostajuće vrijednosti jer one mogu poremetiti rezultate testa. Promatramo sve varijable i brojimo koliko je NA vrijednosti ako ih ima.
+
+```{r}
+for (col_name in names(bigFiveData)){
+  if (sum(is.na(bigFiveData[,col_name])) > 0){
+    cat('Ukupno nedostajućih vrijednosti za varijablu ',col_name, ': ', sum(is.na(bigFiveData[,col_name])),'\n')
+  }
+}
+```
+
+Po rezultatima vidimo da nemamo NA vrijednosti(neodostajućih) ni u jednoj varijabli. Podaci su uredni.
+
+Promotrimo sada kako izgledaju varijable koje dobijemo kao informaciju od ispitanika (godine, zemlja, spol)
+
+Prov ćemo gledati godine jer je to numerička:
+```{r}
+hist(bigFiveData$age,main='Age', xlab='Age', ylab='Frequency')
+
+```
+Vidimo da rezultat nije normalne dristirbucije, pa ćemo pokušati log transformacijom približiti normalnoj.
+
+```{r fig.width = 14, fig.height=5}
+hist(log(bigFiveData$age),main='Age',xlab='Age',ylab='Frequency', breaks=50)
+
+
+```
+Vidimo da smo se uspjeli približiti normalnoj razdiobi.
+
+Sad ćemo pogledati kategorijske varijable (spol i država)
+
+```{r}
+#broj Muskih i Zenskih ispitanika
+print("Podjela na M i Z: ")
+table(bigFiveData$sex)
+barplot(table(bigFiveData$sex), las=2, main='Sex')
+table(bigFiveData$country)
+barplot(table(bigFiveData$country),cex.names = .25, main="Nationality")
+```
+
+Sada kad smo pregledali podatke koje imamo, možemo krenuti na testiranje hipoteza.
+
+#prvi test
+
+1. TEST
+Ako grupiramo ispitanike na mlade i stare, mozemo li vidjeti znacajnu razliku u otvorenosti prema novim iskustvima?
+
+pretpostavka:
+
+H0: Mladi su otvoreniji prema iskustvima, nego stari.
+
+H1: Mladi nisu otvoreniji prema iskustvima.
+
+Ovdje ćemo koristiti jendostrani t-test za testiranje.
+
+T-test za prepostavku uzima normalnost podataka, pa prije početka testiranja moramo pokazati normalnost.
+
+Za početak ćemo nacrtati histogram i odokativno vidjeti.
+
+Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da distribucija ne izgleda najbliže normalnoj, pa ćemo za mlade uzeti mlađe od 25, a za stare starije od 30 i vidjeti kako se graf ponaša.
+
+
+
+```{r}
+#histogram za mlade/stare!
+# prvo cemo uzeti da su mladi <=30 , stari >30
+
+```
+
+
+#ANOVA test
+
+Učitavamo potrebne pakete za test
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(tidyverse)
+library(broom)
+library(AICcmodavg)
+library(tidyverse)
+library(plyr)
+require(nortest)
+```
+
+Učitavamo podatke potrebne za na testiranje hipoteze. 
+
+```{r}
+filteredData <- bigFiveData %>%
+  select(country, conscientiousness_score)
+summary(filtered)
+
+#Provjera je li koja zemlja NA
+filteredData <- filteredData[which(!is.na(filtered$'country')),]
+summary(filteredData)
+
+#Grupiramo po zemljama podatke
+grupirani.podatci <-
+  filteredData %>%
+  group_by(country)
+summary(grupirani.podatci) 
+
+count(filteredData, "country")
+```
+#Grupiranje zemalja u regije
+
+U skladu s gornjim ispisom i brojem rezultata u pojedinim zemljama, odlučili smo pojedine zemlje grupirati u regije i uzeti dio podataka u pojedinim zemljama koje
+imaju previše podataka u odnosu na druge. Regije su Europe, North America i Asia & Pacific.
+
+Zemlje u pojedinim regijama su:
+  Asia & Pacific - Australia, India, New Zealan, Philippine, Singapore, Thailand
+  Europe - Germany, Finland, Ireland, Netherland, UK
+  North America - Canada, USA
+  
+```{r}
+groupedData = select(bigFiveData, c('conscientiousness_score', 'country'))
+
+groupedData$'Region' <- as.factor(ifelse(groupedData$country == "Australia" | groupedData$country == "India" | groupedData$country == "New Zealan" | groupedData$country == "Philippine" | groupedData$country == "Singapore"| groupedData$country == "Thailand", 'Asia & Pacific',
+                                  ifelse(groupedData$country == "Germany" | groupedData$country == "Finland" | groupedData$country == "Ireland" | groupedData$country == "Netherland" | groupedData$country == "UK", 'Europe', 
+                                  ifelse(groupedData$country == "Canada" | groupedData$country == "USA", 'North America',NA))))
+
+summary(bigFiveData)
+
+groupedData = select(groupedData, c('conscientiousness_score', 'Region'))
+
+groupedData = filter(groupedData, (Region == "Asia & Pacific" | Region == "Europe" | Region == "North America" | Region == "Asia & Pacific"))
+groupedData = filter(groupedData, Region != 'Other' &  conscientiousness_score != 'Other')
+ 
+groupedData = groupedData[order(groupedData$Region),]
+groupedData = groupedData[0:72334,]
+
+summary(groupedData)
+
+
+```
+
+#Provjera normalnosti podataka
+Računamo ANOVU kako bi imali reziduale, te ćemo pomoću njih provjeriti jednakost varijanci i provjeriti normalnost prije provođenja ANOVA
+
+Provjera za savjesnost
+```{r}
+lillie.test(groupedData$conscientiousness_score)
+```
+Provjera za Aziju
+```{r}
+lillie.test(groupedData$conscientiousness_score[groupedData$Region=='Asia & Pacific'])
+```
+
+Provjera za Sjevernu Ameriku
+```{r}
+lillie.test(groupedData$conscientiousness_score[groupedData$Region=='North America'])
+```
+
+Provjera za Europu
+```{r}
+lillie.test(groupedData$conscientiousness_score[groupedData$Region=='Europe'])
+```
+#Vizualni prikaz normalnosti
+
+```{r}
+hist(groupedData$conscientiousness_score[groupedData$Region=='Europe'])
+```
+```{r}
+hist(groupedData$conscientiousness_score[groupedData$Region=='North America'])
+```
+```{r}
+hist(groupedData$conscientiousness_score[groupedData$Region=='Asia & Pacific'])
+```
+#Sada ćemo testirati homogenost varijanci regija pomoću naivnog Barlettovim testom
+```{r}
+bartlett.test(groupedData$conscientiousness_score ~ groupedData$Region)
+
+var((groupedData$conscientiousness_score[groupedData$Region=='Europe']))
+var((groupedData$conscientiousness_score[groupedData$Region=='North America']))
+var((groupedData$conscientiousness_score[groupedData$Region =='Asia & Pacific']))
+#
+```
+#Grafički prikaz podataka
+```{r}
+
+boxplot(groupedData$conscientiousness_score ~ (groupedData$Region))
+```
+#ANOVA test
+
+```{r}
+an = aov(groupedData$conscientiousness_score ~ (groupedData$Region))
+summary(an)
+```
+Iz podataka vidimo da hipoteza h0 ne vrijedi, već na gornjem grafu smo uočili razliku.
+
+#Post hoc Dunnett's test
+
+```{r}
+library(DescTools)
+DunnettTest(x=groupedData$conscientiousness_score, g=groupedData$Region)
+```
+Iz navedenog vidimo da je populacija Azije manje savjesna od populacije Sjeverne Amerike.
