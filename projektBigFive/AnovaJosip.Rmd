@@ -84,37 +84,18 @@ table(bigFiveData$country)
 barplot(table(bigFiveData$country),cex.names = .25, main="Nationality")
 ```
 
-Sada kad smo pregledali podatke koje imamo, možemo krenuti na testiranje hipoteza.
-
-#prvi test
-
-1. TEST
-Ako grupiramo ispitanike na mlade i stare, mozemo li vidjeti znacajnu razliku u otvorenosti prema novim iskustvima?
-
-pretpostavka:
-
-H0: Mladi su otvoreniji prema iskustvima, nego stari.
-
-H1: Mladi nisu otvoreniji prema iskustvima.
-
-Ovdje ćemo koristiti jendostrani t-test za testiranje.
-
-T-test za prepostavku uzima normalnost podataka, pa prije početka testiranja moramo pokazati normalnost.
-
-Za početak ćemo nacrtati histogram i odokativno vidjeti.
-
-Prije početka testiranja smo vidjeli podatke za godine, te možemo vidjeti da distribucija ne izgleda najbliže normalnoj, pa ćemo za mlade uzeti mlađe od 25, a za stare starije od 30 i vidjeti kako se graf ponaša.
-
-
-
-```{r}
-#histogram za mlade/stare!
-# prvo cemo uzeti da su mladi <=30 , stari >30
-
-```
 
 
 #ANOVA test
+  
+  U ovom odjeljku ćemo provesti ANOVA test varijanci na temelju sljedećih hipoteza.
+$$ \begin{aligned}
+  H_0 & : \mu_A = \mu_E = \mu_N \\
+  H_1 & : \neg H_0.
+\end{aligned} $$
+
+Također, nakon provedene jednofaktorske ANOVE provest ćemo i post hoc test i provjeriti tvrdnju da je populacija
+istočne Azije svjesnija od ostatka populacije. 
 
 Učitavamo potrebne pakete za test
 
@@ -187,6 +168,9 @@ Računamo ANOVU kako bi imali reziduale, te ćemo pomoću njih provjeriti jednak
 Provjera za savjesnost
 ```{r}
 lillie.test(groupedData$conscientiousness_score)
+
+test = groupedData[0:3000,]
+lillie.test(test$conscientiousness_score)
 ```
 Provjera za Aziju
 ```{r}
@@ -202,6 +186,8 @@ Provjera za Europu
 ```{r}
 lillie.test(groupedData$conscientiousness_score[groupedData$Region=='Europe'])
 ```
+
+
 #Vizualni prikaz normalnosti
 
 ```{r}
@@ -213,6 +199,9 @@ hist(groupedData$conscientiousness_score[groupedData$Region=='North America'])
 ```{r}
 hist(groupedData$conscientiousness_score[groupedData$Region=='Asia & Pacific'])
 ```
+
+Nakon provedenog Liliforce testa normalnosti, vidimo da podatci nisu normalni. No isto tako, napravili smo test s 3000 uzoraka i p vrijednost testa se značajno povećala, što znači da je Liliforce osjetljiv na količinu podataka i na outliere. No naši outliere se ne smiju izbaciti.
+
 #Sada ćemo testirati homogenost varijanci regija pomoću naivnog Barlettovim testom
 ```{r}
 bartlett.test(groupedData$conscientiousness_score ~ groupedData$Region)
@@ -222,17 +211,25 @@ var((groupedData$conscientiousness_score[groupedData$Region=='North America']))
 var((groupedData$conscientiousness_score[groupedData$Region =='Asia & Pacific']))
 #
 ```
+
+Iz testa homogenosti koji je nužan za Anovu možemo zaključiti da varijance nisu homogene, no opet uzevši u obzir 
+količinu podataka i p vrijednost testa homogenosti smatrat ćemo varijance homogene.
+
 #Grafički prikaz podataka
 ```{r}
 
 boxplot(groupedData$conscientiousness_score ~ (groupedData$Region))
 ```
+
+Na temelju grafa pretpostavljamo da nulta hipoteza ne vrijedi ...
+
 #ANOVA test
 
 ```{r}
 an = aov(groupedData$conscientiousness_score ~ (groupedData$Region))
 summary(an)
 ```
+
 Iz podataka vidimo da hipoteza h0 ne vrijedi, već na gornjem grafu smo uočili razliku.
 
 #Post hoc Dunnett's test
@@ -241,4 +238,5 @@ Iz podataka vidimo da hipoteza h0 ne vrijedi, već na gornjem grafu smo uočili 
 library(DescTools)
 DunnettTest(x=groupedData$conscientiousness_score, g=groupedData$Region)
 ```
+
 Iz navedenog vidimo da je populacija Azije manje savjesna od populacije Sjeverne Amerike.
