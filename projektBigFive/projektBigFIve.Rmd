@@ -23,8 +23,10 @@ Učitajmo podatke iz .csv file-a
 ```{r}
 bigFiveData = read.csv("../big_five_scores.csv")
 dim(bigFiveData)
+
 ```
 Podaci se sastoje od 307 313 testiranih ljudi i 9 varijabli koje promatramo.
+
 
 Popis varijabli koje promatramo:
 ```{r}
@@ -52,6 +54,7 @@ for (col_name in names(bigFiveData)){
     cat('Ukupno nedostajućih vrijednosti za varijablu ',col_name, ': ', sum(is.na(bigFiveData[,col_name])),'\n')
   }
 }
+cat('Ukupno ljudi koji imaju 100 godina', age, sum(bigFiveData$age = "100"))
 ```
 
 Po rezultatima vidimo da nemamo NA vrijednosti(neodostajućih) ni u jednoj varijabli. Podaci su uredni.
@@ -61,6 +64,9 @@ Promotrimo sada kako izgledaju varijable koje dobijemo kao informaciju od ispita
 Prov ćemo gledati godine jer je to numerička:
 ```{r}
 hist(bigFiveData$age,main='Age', xlab='Age', ylab='Frequency')
+
+#Koliko ima ljudi starih 100 godina?
+print(count(bigFiveData, age=100))
 
 ```
 Vidimo da rezultat nije normalne dristirbucije, pa ćemo pokušati log transformacijom približiti normalnoj.
@@ -124,13 +130,10 @@ boxplot(young$extraversion_score, middle$extraversion_score, old$extraversion_sc
         main = 'Boxplot of young, middle aged and old people extraversion score')
 ```
 ```{r}
-plot(bigFiveData$extraversion_score, bigFiveData$age, main = "Scatter plot for extraversion score and age") #graficki prikaz podataka 
+smoothScatter(bigFiveData$extraversion_score, bigFiveData$age, main = "Scatter plot for extraversion score and age") #graficki prikaz podataka 
 lines(bigFiveData$extraversion_score,fit.extraversion$fitted.values,col="red") #linija
 ```
 
-```{r}
-summary(fit.extraversion)
-```
 
 UGODNOST
 ```{r}
@@ -144,11 +147,8 @@ boxplot(young$agreeable_score, middle$agreeable_score, old$agreeable_score,
         main = 'Boxplot of young, middle aged and old people agreeable score')
 ```
 ```{r}
-plot(bigFiveData$agreeable_score, bigFiveData$age, main = "Scatter plot for agreeable score and age") #graficki prikaz podataka 
+smoothScatter(bigFiveData$agreeable_score, bigFiveData$age, main = "Scatter plot for agreeable score and age") #graficki prikaz podataka 
 lines(bigFiveData$agreeable_score,fit.agreeable$fitted.values,col="red") #linija
-```
-```{r}
-summary(fit.agreeable)
 ```
 
 SAVJESNOST
@@ -163,11 +163,8 @@ boxplot(young$conscientiousness_score, middle$conscientiousness_score, old$consc
         main = 'Boxplot of young, middle aged and old people conscientiousness score')
 ```
 ```{r}
-plot(bigFiveData$conscientiousness_score, bigFiveData$age, main = "Scatter plot for conscientiousness score and age") #graficki prikaz podataka 
+smoothScatter(bigFiveData$conscientiousness_score, bigFiveData$age, main = "Scatter plot for conscientiousness score and age") #graficki prikaz podataka 
 lines(bigFiveData$conscientiousness_score,fit.conscientiousness$fitted.values,col="red") #linija
-```
-```{r}
-summary(fit.conscientiousness)
 ```
 
 NEUROTICIZAM
@@ -182,11 +179,8 @@ boxplot(young$neuroticism_score, middle$neuroticism_score, old$neuroticism_score
         main = 'Boxplot of young, middle aged and old people neuroticism score')
 ```
 ```{r}
-plot(bigFiveData$neuroticism_score, bigFiveData$age, main = "Scatter plot for neuroticism score and age") #graficki prikaz podataka 
+smoothScatter(bigFiveData$neuroticism_score, bigFiveData$age, main = "Scatter plot for neuroticism score and age") #graficki prikaz podataka 
 lines(bigFiveData$neuroticism_score,fit.neuroticism$fitted.values,col="red") #linija
-```
-```{r}
-summary(fit.neuroticism)
 ```
 
 OTVORENOST NOVIM ISKUSTVIMA
@@ -204,11 +198,8 @@ boxplot(young$openness_score, middle$openness_score, old$openness_score,
         main = 'Boxplot of young, middle aged and old people openness score')
 ```
 ```{r}
-plot(bigFiveData$openness_score, bigFiveData$age,main = 'Scatter plot for openness scores and age') #graficki prikaz podataka 
+smoothScatter(bigFiveData$openness_score, bigFiveData$age,main = 'Scatter plot for openness scores and age') #graficki prikaz podataka 
 lines(bigFiveData$openness_score,fit.opennes$fitted.values,col="red") #linija
-```
-```{r}
-summary(fit.opennes)
 ```
 
 Nakon što smo pogledali prosjeke te napravili box plotove i scatter plotove s regresijskim linijama, bez računanja testova za svaki faktor posebno, možemo vidjeti da je savjesnost najviše ovisna o dobi.
@@ -275,7 +266,7 @@ Normalnost reziduala provjerit ćemo grafički, pomoću q-q plota te statističk
 
 ```{r}
 selected.model = fit.conscientiousness
-plot(selected.model$residuals)
+#smoothScatter(selected.model$residuals)
 ```
 Histogram:
 ```{r}
@@ -291,15 +282,74 @@ Q-Q plot:
 qqnorm(rstandard(selected.model)) 
 qqline(rstandard(selected.model))
 ```
+Na danom q-q plotu i na histogramima vidimo da reziduali nisu normalno distribuirani.
+Mičemo outliere gledajući varijablu godine i varijablu savjesnosti da vidimo dobivamo li "normalnije" rezultate...
 
 ```{r}
-plot(selected.model$fitted.values,selected.model$residuals)
+
+Q1 <- quantile(bigFiveData$conscientiousness_score, .25)
+Q3 <- quantile(bigFiveData$conscientiousness_score, .75)
+IQR <- IQR(bigFiveData$conscientiousness_score)
+
+#Q1 <- quantile(bigFiveData$age, .25)
+#Q3 <- quantile(bigFiveData$age, .75)
+#IQR <- IQR(bigFiveData$age)
+
+bigFiveDatatemp <- subset(bigFiveData, bigFiveData$conscientiousness_score> (Q1 - 1.5*IQR) & bigFiveData$conscientiousness_score< (Q3 + 1.5*IQR))
+
+Q1 <- quantile(bigFiveDatatemp$age, .25)
+Q3 <- quantile(bigFiveDatatemp$age, .75)
+IQR <- IQR(bigFiveDatatemp$age)
+
+bigFiveDataNew <- subset(bigFiveDatatemp, bigFiveDatatemp$age> (Q1 - 1.5*IQR) & bigFiveDatatemp$age< (Q3 + 1.5*IQR))
+
+dim(bigFiveDataNew)
 ```
+
+
+Na temelju danih rezultata usporedbe godina sa svakim od 5 faktora, zaključili smo da ni za jedan od njih nema smisla raditi linearnu regresiju.. izabrali smo naizgled najlogičniji, ali prema dobivenom q-q plotu je očito da podaci nisu normalno distribuirani, pa ćemo propbati nešto novo. Na žalost ovaj test je "propao".
+
+Probat ćemo za početak obrnuto.. gledat ćemo kako savjesnot ispitanika ovisi o dobi.. (do sada smo gledali kako dob ovisi o savjesnosti i ostalim faktorima)
+
+Zavisna varijabla: Y = conscientiousness_score
+Nezavisna varijabla: X = age
+
+Radimo novi linearni model:
+```{r}
+fit.conscientiousness_age_new = lm(conscientiousness_score~age, data = bigFiveDataNew)
+fit.conscientiousness_age = lm(conscientiousness_score~age, data = bigFiveData)
+
+```
+
+Smooth Scatter plot za ovisnost savjesnosti o dobi:
+```{r}
+smoothScatter(bigFiveData$age, bigFiveData$conscientiousness_score, main = "Scatter plot for conscientiousness score and age") #graficki prikaz podataka 
+lines(bigFiveData$age,fit.conscientiousness_age$fitted.values,col="red") #linija
+```
+
+Sada radimo qq-plot za taj model:
+```{r}
+qqnorm(rstandard(fit.conscientiousness_age_old))
+qqline(rstandard(fit.conscientiousness_age_old))
+```
+
+
+Q-q plot daje dobre rezultate za razliku od prethodnog. Možemo naslutiti da se radi o nomalno distribuiranim podacima.
+Osim q-q plota, možemo napraviti i histogram za reziduale da grafički pokazećemo normalnost:
+
+```{r}
+hist((fit.conscientiousness_age$residuals))
+```
+```{r}
+hist(rstandard(fit.conscientiousness_age))
+```
+
+S obzirom da Q-Q plot i histogrami nisu dovoljni za pokazivanje normalnosti, sada ćemo na danom modelu provesti statističke testove (KS i Lilliefors)
 
 Kolmogorov Smirnovljev test:
 
 ```{r}
-ks.test(rstandard(fit.conscientiousness),"pnorm")
+ks.test(rstandard(fit.conscientiousness_age),"pnorm")
 
 ```
 ```{r}
@@ -307,6 +357,73 @@ require(nortest)
 ```
 Lillieforsov test:
 ```{r}
-lillie.test(rstandard(fit.conscientiousness))
+lillie.test(rstandard(fit.conscientiousness_age))
 ```
+
+Ovim statističkim testovima pokazali smo normalnost pa možemo koristiti te podatke i linearni model u daljnjem razmatranju. 
+
+Sada ćemo vidjeti kvalitetu prilagodbe modela podacima:
+```{r}
+summary(fit.conscientiousness_age)
+```
+
+Možemo za kraj, nakon ovih testova pogledati i korelaciju među tim varijablama da potvrdimo da nisu linearno povezane.
+
+```{r}
+cor(bigFiveDataNew$age, bigFiveDataNew$conscientiousness_score)
+cor.test(bigFiveDataNew$conscientiousness_score, bigFiveDataNew$age)
+```
+
+
+Iz navedenih rezultata testa, po R-squared koji iznosi 6 % (u ovom slučaju kada smo makli outliere i po dobi i po savjesnosti).. Inače, da bi model za linearnu regresiju bio dobar, za neke socijalne eksperminte, zadovoljili bi se i s 30-40% sličnosti, ali 6 % je jako malo..
+
+Nakon ovog neuspješnog testa, tj. odbijanja početne hipoteze da možemo savjesnost predviditi pomoću dobi ili obrnuto, u igru ćemo probati ubaciti još neki regresor o kojem ovisi savjesnost, te time pokušati pokazati linearnu povezanost.
+
+Prije nego odlučimo koje ćemo varijable uzeti za regresore, pogledat ćemo koefijcijente koreliranosti.
+Inače, za višestruku regresiju ne smijemo koristiti varijable koje su jako korelirane jer mogu stvoriti probleme u interpretaciji rezultata.
+
+Koeficijent korelacije godina i spola:
+```{r}
+cor(bigFiveData$age, bigFiveData$sex)
+#cor.test(bigFiveData$age, bigFiveData$sex)
+```
+Vidimo da ove dvije varijable nisu korelirane, stoga ih možemo koristiti kao regresore u višestrukoj regresiji.
+
+Radimo novi linearni model.
+```{r}
+fit.conscientiousness_age_sex = lm(conscientiousness_score~age + sex, data = bigFiveData)
+```
+Rezultati provjere kvalitete modela:
+```{r}
+summary(fit.conscientiousness_age_sex)
+```
+Nakon što smo napravili par teatova i vidjeli da je rezultat za R-squared malen što god uzeli, probat ćemo s random manjim uzorkom, jer kod R-squared može biti problem velika količina podataka jer on gleda varijancu pogresške..
+Prvo pokušavamo za višestruku regresiju s godinama i spolom na jednoj, i savjesnošću na drugoj strani.
+```{r}
+fit.conscientiousness_age_sex_test = lm(conscientiousness_score~age + sex, data = sample_n(bigFiveData, 100))
+summary(fit.conscientiousness_age_sex_test)
+```
+Scatter plot navedenog primjera:
+```{r}
+plot(fit.conscientiousness_age_sex_test$fitted.values,fit.conscientiousness_age_sex_test$residuals)
+```
+Nakon toga probat ćemo početnu ideju, jednostavnu linearnu regresiju za godine vs savjesnost.
+```{r}
+fit.conscientiousness_random = lm(conscientiousness_score~age, data = sample_n(bigFiveData, 100))
+summary(fit.conscientiousness_random)
+```
+Scatter plot:
+```{r}
+plot(fit.conscientiousness_random$fitted.values,fit.conscientiousness_random$residuals)
+```
+
+U ovom slučaju promatrali smo uzorak od 100 i dobili smo da je R-squared 25% što je u slučaju promatranja ljudi i ljudskog ponašanja dobro, pa možemo zaključiti da je pretpostavka dobra i rezultat značajan.
+
+
+Na kraju cijelog testa, nakon što smo uglavnom grafički provjeravali ovisnosti svih faktora o godinama, napravili smo linearni model s godinama kao regresorom i koeficijentom savjesnosti kao nezavnisnom varijablom i dobili dobar rezultat.
+Možemo zaključiti da su "stariji ljudi više savjesni", što je donekle i logično jer čovjek odrastanjem posteje svjesniji svojih obveza i odgovorniji prema njima.
+
+
+
+
 
