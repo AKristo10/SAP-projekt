@@ -54,7 +54,6 @@ for (col_name in names(bigFiveData)){
     cat('Ukupno nedostajućih vrijednosti za varijablu ',col_name, ': ', sum(is.na(bigFiveData[,col_name])),'\n')
   }
 }
-cat('Ukupno ljudi koji imaju 100 godina', age, sum(bigFiveData$age = "100"))
 ```
 
 Po rezultatima vidimo da nemamo NA vrijednosti(neodostajućih) ni u jednoj varijabli. Podaci su uredni.
@@ -329,8 +328,8 @@ lines(bigFiveData$age,fit.conscientiousness_age$fitted.values,col="red") #linija
 
 Sada radimo qq-plot za taj model:
 ```{r}
-qqnorm(rstandard(fit.conscientiousness_age_old))
-qqline(rstandard(fit.conscientiousness_age_old))
+qqnorm(rstandard(fit.conscientiousness_age))
+qqline(rstandard(fit.conscientiousness_age))
 ```
 
 
